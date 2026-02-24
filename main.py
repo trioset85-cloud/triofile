@@ -1,43 +1,28 @@
-import telebot
-import time
-from flask import Flask
-from threading import Thread
-
-# --- BAGIAN WEB SERVER (AGAR BOT TIDAK TIDUR) ---
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "Bot @triofile_bot sedang Online!"
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-# --- BAGIAN BOT TELEGRAM ---
-TOKEN = "8547344412:AAEoQOZXL0dzSrkn2lvxytjDkNq4Pg9bxw4"
-bot = telebot.TeleBot(TOKEN)
+from telebot import types
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Halo! Bot ini sudah menggunakan sistem anti-tidur dan aktif 24 jam.")
-
-@bot.message_handler(func=lambda message: True)
-def echo_all(message):
-    bot.reply_to(message, f"Pesan diterima: {message.text}")
-
-# --- JALANKAN SEMUANYA ---
-if __name__ == "__main__":
-    print("Memulai Web Server...")
-    keep_alive()  # Menjalankan Flask di latar belakang
-    print("Bot @triofile_bot sedang berjalan...")
+    # Membuat wadah tombol
+    markup = types.InlineKeyboardMarkup(row_width=2)
     
-    while True:
-        try:
-            bot.infinity_polling(timeout=10, long_polling_timeout=5)
-        except Exception as e:
-            print(f"Error: {e}")
-            time.sleep(5)
+    # Membuat tombol-tombolnya
+    btn_list = types.InlineKeyboardButton("Daftar File 📂", callback_data="list_files")
+    btn_stats = types.InlineKeyboardButton("Statistik 📊", callback_data="show_stats")
+    btn_help = types.InlineKeyboardButton("Bantuan ❓", callback_data="show_help")
+    btn_admin = types.InlineKeyboardButton("Kontak Admin 👨‍💻", url="https://t.me/username_kamu")
+
+    # Memasukkan tombol ke wadah
+    markup.add(btn_list, btn_stats, btn_help, btn_admin)
+
+    bot.send_message(message.chat.id, "Halo! Selamat datang di @triofile_bot.\nSilakan pilih menu di bawah ini:", reply_markup=markup)
+
+# Logika untuk menangani ketika tombol dipencet
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    if call.data == "list_files":
+        bot.answer_callback_query(call.id, "Membuka daftar file...")
+        bot.send_message(call.message.chat.id, "Fitur Daftar File sedang dalam pengembangan.")
+    elif call.data == "show_stats":
+        bot.send_message(call.message.chat.id, "Total file tersimpan: 0")
+    elif call.data == "show_help":
+        bot.send_message(call.message.chat.id, "Cara simpan file: Cukup kirimkan dokumen/foto ke bot ini.")
